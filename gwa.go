@@ -119,3 +119,17 @@ func (q Adapter) PerformIn(job worker.Job, t time.Duration) error {
 func (q Adapter) PerformAt(job worker.Job, t time.Time) error {
 	return q.PerformIn(job, t.Sub(time.Now()))
 }
+
+// PerformUnique sends a new job to the queue, now. Only one job with a given name/arguments exists in the queue at once.
+func (q Adapter) PerformUnique(job worker.Job) error {
+	q.Logger.Infof("Enqueuing job %s\n", job)
+	j, err := q.Enqueur.EnqueueUnique(job.Handler, job.Args)
+	if err != nil {
+		q.Logger.Errorf("error enqueuing job %s", job)
+		return errors.WithStack(err)
+	}
+	if j == nil {
+		q.Logger.Infof("found duplicated job %s", job)
+	}
+	return nil
+}
